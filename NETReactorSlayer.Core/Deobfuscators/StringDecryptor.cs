@@ -27,9 +27,10 @@ namespace NETReactorSlayer.Core.Deobfuscators
     {
         public void Execute()
         {
-            Cleaner.RemoveNOPs();
+            //Cleaner.RemoveNOPs();
             StacktracePatcher.Patch();
             long count = 0L;
+            long eiacount = 0L;
             foreach (TypeDef type in DeobfuscatorContext.Module.GetTypes())
             {
                 foreach (MethodDef method in (from x in type.Methods where x.HasBody && x.Body.HasInstructions select x).ToArray<MethodDef>())
@@ -88,10 +89,38 @@ namespace NETReactorSlayer.Core.Deobfuscators
                         }
                         catch { }
                     }
+
+
+                     for (int i = 0; i < method.Body.Instructions.Count; i++)
+                     {
+                         try
+                         {
+                            if (method.Body.Instructions[i].OpCode.Equals(OpCodes.Call) & method.Body.Instructions[i].Operand.ToString().Equals("System.Text.Encoding System.Text.Encoding::get_UTF8()") & 
+                            method.Body.Instructions[i + 1].OpCode.Equals(OpCodes.Ldc_I4_S) & 
+                            method.Body.Instructions[i + 2].OpCode.Equals(OpCodes.Newarr) & method.Body.Instructions[i + 2].Operand.ToString().Equals("System.Byte") &
+                            method.Body.Instructions[i + 3].OpCode.Equals(OpCodes.Dup) &
+                            method.Body.Instructions[i + 4].OpCode.Equals(OpCodes.Ldtoken) &
+                            method.Body.Instructions[i + 5].OpCode.Equals(OpCodes.Call) & method.Body.Instructions[i + 5].Operand.ToString().Equals("System.Void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(System.Array,System.RuntimeFieldHandle)") &
+                            method.Body.Instructions[i + 6].OpCode.Equals(OpCodes.Callvirt) & method.Body.Instructions[i + 6].Operand.ToString().Equals("System.String System.Text.Encoding::GetString(System.Byte[])"))
+                            {
+                                method.Body.Instructions[i].OpCode = OpCodes.Ldstr;
+                                method.Body.Instructions[i].Operand = System.Text.Encoding.UTF8.GetString(((dnlib.DotNet.FieldDef)method.Body.Instructions[i + 4].Operand).InitialValue);
+                                for(int si = i+1; si<i+7; si++)
+                                {
+                                    method.Body.Instructions[si].OpCode = OpCodes.Nop;
+                                }
+                                eiacount++;
+                            }
+                         }
+                         catch { }
+                     }
+
                 }
             }
             if (count > 0L) Logger.Done((int)count + " Strings decrypted.");
-            else Logger.Warn("Couldn't find any encrypted string.");
+            if (eiacount > 0L) Logger.Done((int)eiacount + " eiaStrings decrypted.");
+
+            if((count ==0L) && (eiacount == 0)) Logger.Warn("Couldn't find any encrypted string.");
         }
 
         public class StacktracePatcher
