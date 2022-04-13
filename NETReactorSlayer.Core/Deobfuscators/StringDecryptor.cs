@@ -96,7 +96,6 @@ namespace NETReactorSlayer.Core.Deobfuscators
                          try
                          {
                             if (method.Body.Instructions[i].OpCode.Equals(OpCodes.Call) & method.Body.Instructions[i].Operand.ToString().Equals("System.Text.Encoding System.Text.Encoding::get_UTF8()") & 
-                            method.Body.Instructions[i + 1].OpCode.Equals(OpCodes.Ldc_I4_S) & 
                             method.Body.Instructions[i + 2].OpCode.Equals(OpCodes.Newarr) & method.Body.Instructions[i + 2].Operand.ToString().Equals("System.Byte") &
                             method.Body.Instructions[i + 3].OpCode.Equals(OpCodes.Dup) &
                             method.Body.Instructions[i + 4].OpCode.Equals(OpCodes.Ldtoken) &
